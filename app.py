@@ -1,8 +1,10 @@
-from flask import Flask, request 
-from db import items, stores
+from flask import Flask, request
+import uuid
 
 app = Flask(__name__)
 
+stores = {}
+items = {}
 
 @app.get("/store") # http://127.0.0.1:5000/store
 def get_stores(): 
@@ -17,13 +19,13 @@ def create_store():
     return store, 201
 
 @app.post("/item")
-def create_item(name):
+def create_item(): 
     item_data = request.get_json()
     if item_data["store_id"] not in stores: 
         return {"message": "Store not found"}, 404 
     
     item_id = uuid.uuid4().hex 
-    item = {**store_data, "id": store_id}
+    item = {**item_data, "id": item_id}
     items[item_id] = item
 
     return item, 201
@@ -33,9 +35,9 @@ def get_all_items():
     return {"items": list(items.values())} 
 
 @app.post("/store/<string:name>")
-def create_item(name):
+def create_item_in_store(name):
     request_data = request.get_json()
-    for store in stores: 
+    for store in stores.values(): 
         if store["name"] == name: 
             new_item = {"name": request_data["name"], "price": request_data["price"]} 
             store["items"].append(new_item) 
@@ -51,7 +53,7 @@ def get_store(store_id):
 
 @app.get("/store/<string:name>/item")
 def get_item_in_store(name):
-    for store in stores: 
+    for store in stores.values(): 
         if store["name"] == name:
-            return {"items": store["items"]} 
+            return {"items": store.get("items", [])} 
     return {"message": "Store not found"}, 404 
